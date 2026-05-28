@@ -98,109 +98,27 @@ The `ollama-init` container automatically pulls the llama3.2:3b model and exits.
 
 ---
 
-## API Usage
+## API Endpoints
 
-### Upload a document
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/documents/ingest` | Upload and index a PDF or CSV document |
+| `GET` | `/api/documents` | List all indexed documents |
+| `DELETE` | `/api/documents/{id}` | Remove a document and all its chunks from the index |
+| `POST` | `/api/chat/ask` | Ask a question and get an answer grounded in the indexed documents |
 
-Supported formats: **PDF** and **CSV**. CSV files are parsed row by row into `header: value` text for better RAG retrieval.
-
-```bash
-# PDF
-curl -X POST http://localhost:5000/api/documents/ingest \
-  -F "file=@/path/to/company-policy.pdf"
-
-# CSV
-curl -X POST http://localhost:5000/api/documents/ingest \
-  -F "file=@/path/to/employees.csv"
-```
-
-Response:
-```json
-{ "documentId": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "chunkCount": 42 }
-```
-
-### Ask a question
-
-```bash
-curl -X POST http://localhost:5000/api/chat/ask \
-  -H "Content-Type: application/json" \
-  -d '{"question": "What is the remote work policy?", "conversationId": "session-1"}'
-```
-
-Response:
-```json
-{
-  "answer": "According to the Remote Work Policy document, employees may work remotely up to 3 days per week...",
-  "conversationId": "session-1"
-}
-```
-
-Omit `conversationId` to start a new conversation — a UUID is generated automatically.
-
-### List documents
-
-```bash
-curl http://localhost:5000/api/documents
-```
-
-### Delete a document
-
-```bash
-curl -X DELETE http://localhost:5000/api/documents/3fa85f64-5717-4562-b3fc-2c963f66afa6
-```
-
----
-
-## Running Tests
-
-```bash
-# Unit tests (no external dependencies)
-dotnet test tests/UnitTests
-
-# Integration tests (requires Qdrant + Ollama running)
-docker-compose up -d qdrant ollama
-dotnet test tests/IntegrationTests
-```
+Full interactive docs available at `http://localhost:5000/swagger`.
 
 ---
 
 ## Sample Documents
 
-The `samples/` folder contains two ready-to-use PDF files for testing the ingestion pipeline end-to-end:
+The `samples/` folder contains optional PDF files for testing the API end-to-end:
 
 | File | Description |
 |---|---|
 | `samples/employees.pdf` | Directory of 10 fictional employees with name, age, gender, nationality, salary, department and hire date |
 | `samples/vacations.pdf` | Vacation schedule for each employee, with start/end dates, number of days and approval status |
-
-Ingest them right after starting the stack:
-
-```bash
-curl -X POST http://localhost:5000/api/documents/ingest -F "file=@samples/employees.pdf"
-curl -X POST http://localhost:5000/api/documents/ingest -F "file=@samples/vacations.pdf"
-```
-
-Then try asking questions like:
-
-```bash
-curl -X POST http://localhost:5000/api/chat/ask \
-  -H "Content-Type: application/json" \
-  -d '{"question": "Who is the Tech Lead and what is their salary?", "conversationId": "demo"}'
-```
-
----
-
-## Configuration
-
-All settings can be overridden via environment variables:
-
-| Variable | Default | Description |
-|---|---|---|
-| `Ollama__Endpoint` | `http://localhost:11434` | Ollama API base URL |
-| `Qdrant__Host` | `localhost` | Qdrant hostname |
-| `Qdrant__Port` | `6334` | Qdrant gRPC port |
-| `DataPath` | `<app>/data` | Directory for the document registry JSON |
-| `APP_PORT` | `5000` | Host port mapped to the API container |
 
 ---
 
