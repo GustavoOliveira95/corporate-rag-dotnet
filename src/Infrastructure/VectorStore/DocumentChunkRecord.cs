@@ -19,6 +19,6 @@ public sealed class DocumentChunkRecord
     [VectorStoreData]
     public int ChunkIndex { get; set; }
 
-    [VectorStoreVector(2048, DistanceFunction = DistanceFunction.CosineSimilarity)]
+    [VectorStoreVector(3072, DistanceFunction = DistanceFunction.CosineSimilarity)]
     public ReadOnlyMemory<float>? Embedding { get; set; }
 }

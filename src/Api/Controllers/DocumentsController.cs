@@ -14,7 +14,7 @@ public sealed class DocumentsController : ControllerBase
 
     public DocumentsController(IMediator mediator) => _mediator = mediator;
 
-    /// <summary>Upload and index a PDF document.</summary>
+    /// <summary>Upload and index a PDF or CSV document.</summary>
     [HttpPost("ingest")]
     [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(IngestDocumentResult), StatusCodes.Status200OK)]
@@ -23,6 +23,10 @@ public sealed class DocumentsController : ControllerBase
     {
         if (file is null || file.Length == 0)
             return BadRequest(new { error = "A non-empty file is required." });
+
+        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (ext != ".pdf" && ext != ".csv")
+            return BadRequest(new { error = "Only .pdf and .csv files are supported." });
 
         var command = new IngestDocumentCommand(
             file.OpenReadStream(),

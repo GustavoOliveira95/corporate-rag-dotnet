@@ -26,7 +26,7 @@ This prevents hallucination: the model can only answer from what's actually in y
                     │         Infrastructure         │
                     │  ┌──────────┐  ┌───────────┐  │
                     │  │ Qdrant   │  │  Ollama        │  │
-                    │  │ (Vectors)│  │  (llama3.2:1b) │  │
+                    │  │ (Vectors)│  │  (llama3.2:3b) │  │
                     │  └──────────┘  └───────────┘  │
                     └───────────────────────────────┘
 ```
@@ -34,15 +34,16 @@ This prevents hallucination: the model can only answer from what's actually in y
 ### Ingestion Pipeline
 
 ```
-PDF Upload ──▶ PdfPig (extract text) ──▶ Chunker (500 words / 50 overlap)
-    ──▶ Ollama llama3.2:1b (embed each chunk) ──▶ Qdrant (store vectors)
+PDF/CSV Upload ──▶ DocumentLoaderRouter ──▶ PdfPig or CsvLoader (extract text)
+    ──▶ Chunker (500 words / 50 overlap)
+    ──▶ Ollama llama3.2:3b (embed each chunk) ──▶ Qdrant (store vectors)
 ```
 
 ### Question-Answering Pipeline
 
 ```
-Question ──▶ Ollama llama3.2:1b (embed) ──▶ Qdrant (top-5 semantic search)
-    ──▶ Context Builder ──▶ Ollama llama3.2:1b (LLM with ChatHistory) ──▶ Answer
+Question ──▶ Ollama llama3.2:3b (embed) ──▶ Qdrant (top-5 semantic search)
+    ──▶ Context Builder ──▶ Ollama llama3.2:3b (LLM with ChatHistory) ──▶ Answer
 ```
 
 ---
@@ -53,9 +54,10 @@ Question ──▶ Ollama llama3.2:1b (embed) ──▶ Qdrant (top-5 semantic s
 |---|---|
 | API | .NET 10 Web API |
 | AI Orchestration | Semantic Kernel |
-| LLM & Embeddings | Ollama + llama3.2:1b (local) |
+| LLM & Embeddings | Ollama + llama3.2:3b (local) |
 | Vector Store | Qdrant |
 | PDF Extraction | PdfPig |
+| CSV Extraction | Built-in (header → value rows) |
 | Use Cases | MediatR |
 | Tests | xUnit + Moq + FluentAssertions |
 | Containers | Docker + Docker Compose |
@@ -66,9 +68,9 @@ Question ──▶ Ollama llama3.2:1b (embed) ──▶ Qdrant (top-5 semantic s
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (v24+)
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10) — for local development only
-- ~1.5 GB free disk space for the llama3.2:1b model
+- ~2.5 GB free disk space for the llama3.2:3b model
 
-> **GPU note**: llama3.2:1b runs on CPU by default (~30–90 s/response). For GPU acceleration, edit `docker-compose.yml` and add the appropriate NVIDIA/AMD runtime to the `ollama` service.
+> **GPU note**: llama3.2:3b runs on CPU by default (~1–3 min/response). For GPU acceleration, edit `docker-compose.yml` and add the appropriate NVIDIA/AMD runtime to the `ollama` service.
 
 ---
 
@@ -85,14 +87,14 @@ cp .env.example .env
 # 3. Start all services
 docker-compose up -d
 
-# 4. Wait for llama3.2:1b to download (~1.3 GB, first run only)
+# 4. Wait for llama3.2:3b to download (~2 GB, first run only)
 docker logs -f corporate-rag-ollama-init
 
 # 5. Open Swagger UI
 start http://localhost:5000/swagger
 ```
 
-The `ollama-init` container automatically pulls the llama3.2:1b model and exits. The API waits for Qdrant and Ollama to be healthy before starting.
+The `ollama-init` container automatically pulls the llama3.2:3b model and exits. The API waits for Qdrant and Ollama to be healthy before starting.
 
 ---
 
@@ -100,9 +102,16 @@ The `ollama-init` container automatically pulls the llama3.2:1b model and exits.
 
 ### Upload a document
 
+Supported formats: **PDF** and **CSV**. CSV files are parsed row by row into `header: value` text for better RAG retrieval.
+
 ```bash
+# PDF
 curl -X POST http://localhost:5000/api/documents/ingest \
   -F "file=@/path/to/company-policy.pdf"
+
+# CSV
+curl -X POST http://localhost:5000/api/documents/ingest \
+  -F "file=@/path/to/employees.csv"
 ```
 
 Response:
@@ -197,7 +206,7 @@ All settings can be overridden via environment variables:
 
 ## Notes
 
-- **Model size**: llama3.2:1b is ~1.3 GB. Downloaded once and cached in the `ollama_models` Docker volume.
-- **CPU performance**: Expect 30–90 seconds per response on CPU. Inference is faster on machines with a dedicated GPU.
+- **Model size**: llama3.2:3b is ~2 GB. Downloaded once and cached in the `ollama_models` Docker volume.
+- **CPU performance**: Expect 1–3 minutes per response on CPU. Inference is faster on machines with a dedicated GPU.
 - **Conversation history** is stored in-memory and cleared on API restart. For production, replace `InMemoryConversationHistoryService` with a Redis or database-backed implementation.
 - **Document registry** is stored as a JSON file in the `data/` volume. For production, replace `JsonFileDocumentRepository` with a SQL or NoSQL database implementation.

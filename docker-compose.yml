@@ -38,7 +38,7 @@ services:
       - ollama_models:/root/.ollama
     environment:
       - OLLAMA_HOST=http://ollama:11434
-    entrypoint: ["ollama", "pull", "llama3.2:1b"]
+    entrypoint: ["ollama", "pull", "llama3.2:3b"]
     restart: "no"
 
   api:

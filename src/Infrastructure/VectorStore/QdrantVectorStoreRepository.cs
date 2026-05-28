@@ -29,6 +29,7 @@ public sealed class QdrantVectorStoreRepository : IVectorStoreRepository
     public async Task UpsertBatchAsync(IEnumerable<DocumentChunk> chunks, CancellationToken cancellationToken = default)
     {
         var collection = GetCollection();
+        await collection.EnsureCollectionExistsAsync(cancellationToken);
 
         foreach (var chunk in chunks)
         {

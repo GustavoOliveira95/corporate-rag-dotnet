@@ -31,13 +31,13 @@ public static class DependencyInjection
         if (string.IsNullOrEmpty(dataPath))
             dataPath = Path.Combine(AppContext.BaseDirectory, "data");
 
-        // llama3.2:1b on CPU can take several minutes — extend timeout for all HTTP clients
+        // llama3.2:3b on CPU can take several minutes — extend timeout for all HTTP clients
         services.ConfigureHttpClientDefaults(o => o.ConfigureHttpClient(c => c.Timeout = TimeSpan.FromMinutes(10)));
 
         // Semantic Kernel with Ollama
         var kernelBuilder = services.AddKernel();
-        kernelBuilder.AddOllamaTextEmbeddingGeneration("llama3.2:1b", new Uri(ollamaEndpoint));
-        kernelBuilder.AddOllamaChatCompletion("llama3.2:1b", new Uri(ollamaEndpoint));
+        kernelBuilder.AddOllamaTextEmbeddingGeneration("llama3.2:3b", new Uri(ollamaEndpoint));
+        kernelBuilder.AddOllamaChatCompletion("llama3.2:3b", new Uri(ollamaEndpoint));
 
         // Qdrant: register client first so both the vector store and the repository share it
         services.AddSingleton(new QdrantClient(qdrantHost, qdrantPort));
@@ -46,7 +46,9 @@ public static class DependencyInjection
         // Application services
         services.AddSingleton<ChunkingService>();
         services.AddSingleton<IConversationHistoryService, InMemoryConversationHistoryService>();
-        services.AddSingleton<IDocumentLoader, PdfDocumentLoader>();
+        services.AddSingleton<PdfDocumentLoader>();
+        services.AddSingleton<CsvDocumentLoader>();
+        services.AddSingleton<IDocumentLoader, DocumentLoaderRouter>();
         services.AddSingleton<IDocumentRepository>(_ =>
             new JsonFileDocumentRepository(Path.Combine(dataPath, "documents.json")));
 

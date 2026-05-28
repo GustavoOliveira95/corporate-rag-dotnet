@@ -6,7 +6,7 @@ namespace Infrastructure.DocumentLoader;
 
 public sealed class PdfDocumentLoader : IDocumentLoader
 {
-    public async Task<string> ExtractTextAsync(Stream stream, CancellationToken cancellationToken = default)
+    public async Task<string> ExtractTextAsync(Stream stream, string fileName, CancellationToken cancellationToken = default)
     {
         using var ms = new MemoryStream();
         await stream.CopyToAsync(ms, cancellationToken);

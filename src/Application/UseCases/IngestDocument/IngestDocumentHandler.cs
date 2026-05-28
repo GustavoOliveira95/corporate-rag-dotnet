@@ -29,7 +29,7 @@ public sealed class IngestDocumentHandler : IRequestHandler<IngestDocumentComman
 
     public async Task<IngestDocumentResult> Handle(IngestDocumentCommand request, CancellationToken cancellationToken)
     {
-        var text = await _documentLoader.ExtractTextAsync(request.FileStream, cancellationToken);
+        var text = await _documentLoader.ExtractTextAsync(request.FileStream, request.FileName, cancellationToken);
         var chunks = _chunkingService.Chunk(text).ToList();
         var document = Document.Create(request.FileName, request.ContentType, request.FileSizeBytes);
 

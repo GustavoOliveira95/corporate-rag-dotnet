@@ -26,7 +26,7 @@ public class IngestDocumentHandlerTests
     public async Task Handle_ValidDocument_ReturnsDocumentIdAndChunkCount()
     {
         var text = string.Join(' ', Enumerable.Repeat("word", 100));
-        _documentLoader.Setup(x => x.ExtractTextAsync(It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+        _documentLoader.Setup(x => x.ExtractTextAsync(It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(text);
         _embeddingService.Setup(x => x.GenerateAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new float[3072]);
@@ -44,7 +44,7 @@ public class IngestDocumentHandlerTests
     public async Task Handle_LargeDocument_ProducesMultipleChunks()
     {
         var text = string.Join(' ', Enumerable.Repeat("word", 2000));
-        _documentLoader.Setup(x => x.ExtractTextAsync(It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+        _documentLoader.Setup(x => x.ExtractTextAsync(It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(text);
         _embeddingService.Setup(x => x.GenerateAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new float[3072]);
@@ -61,7 +61,7 @@ public class IngestDocumentHandlerTests
     public async Task Handle_AssignsUniqueDocumentIdPerCall()
     {
         var text = string.Join(' ', Enumerable.Repeat("word", 10));
-        _documentLoader.Setup(x => x.ExtractTextAsync(It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+        _documentLoader.Setup(x => x.ExtractTextAsync(It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(text);
         _embeddingService.Setup(x => x.GenerateAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new float[3072]);
