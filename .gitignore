@@ -1,0 +1,29 @@
+## .NET
+bin/
+obj/
+*.user
+.vs/
+*.suo
+.idea/
+
+## dotnet publish
+publish/
+
+## NuGet
+*.nupkg
+*.snupkg
+packages/
+*.lock.json
+!packages.lock.json
+
+## Environment
+.env
+*.env.local
+
+## OS
+.DS_Store
+Thumbs.db
+
+## Data
+src/Api/data/
+data/
