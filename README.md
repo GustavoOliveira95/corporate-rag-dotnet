@@ -51,7 +51,7 @@ Question ──▶ Ollama phi3 (embed) ──▶ Qdrant (top-5 semantic search)
 
 | Component | Technology |
 |---|---|
-| API | .NET 8 Web API |
+| API | .NET 10 Web API |
 | AI Orchestration | Semantic Kernel |
 | LLM & Embeddings | Ollama + phi3 (local) |
 | Vector Store | Qdrant |
@@ -65,7 +65,7 @@ Question ──▶ Ollama phi3 (embed) ──▶ Qdrant (top-5 semantic search)
 ## Prerequisites
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (v24+)
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8) — for local development only
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10) — for local development only
 - ~3 GB free disk space for the phi3 model
 
 > **GPU note**: phi3 runs on CPU by default (~10–30 s/response). For GPU acceleration, edit `docker-compose.yml` and add the appropriate NVIDIA/AMD runtime to the `ollama` service.
@@ -155,32 +155,28 @@ dotnet test tests/IntegrationTests
 
 ---
 
-## Project Structure
+## Sample Documents
 
+The `samples/` folder contains two ready-to-use PDF files for testing the ingestion pipeline end-to-end:
+
+| File | Description |
+|---|---|
+| `samples/employees.pdf` | Directory of 10 fictional employees with name, age, gender, nationality, salary, department and hire date |
+| `samples/vacations.pdf` | Vacation schedule for each employee, with start/end dates, number of days and approval status |
+
+Ingest them right after starting the stack:
+
+```bash
+curl -X POST http://localhost:5000/api/documents/ingest -F "file=@samples/employees.pdf"
+curl -X POST http://localhost:5000/api/documents/ingest -F "file=@samples/vacations.pdf"
 ```
-corporate-rag-dotnet/
-├── src/
-│   ├── Api/                          # HTTP layer (controllers, Program.cs)
-│   ├── Application/                  # Use cases (MediatR handlers + interfaces)
-│   │   ├── Common/ChunkingService.cs
-│   │   ├── Interfaces/               # Ports (IEmbeddingService, IVectorStoreRepository…)
-│   │   └── UseCases/                 # IngestDocument, AskQuestion, ListDocuments, DeleteDocument
-│   ├── Domain/                       # Entities and value objects
-│   │   ├── Entities/                 # Document, DocumentChunk
-│   │   └── ValueObjects/             # DocumentId, ChunkContent
-│   └── Infrastructure/               # Adapters
-│       ├── DocumentLoader/           # PdfPig-based PDF extractor
-│       ├── EmbeddingService/         # Ollama via Semantic Kernel
-│       ├── LLMService/               # Ollama chat + in-memory conversation history
-│       ├── Persistence/              # JSON file document registry
-│       ├── SemanticKernel/           # DocumentSearchPlugin ([KernelFunction])
-│       └── VectorStore/              # Qdrant via Semantic Kernel IVectorStore
-├── tests/
-│   ├── UnitTests/
-│   └── IntegrationTests/
-├── docker-compose.yml
-├── Dockerfile
-└── .env.example
+
+Then try asking questions like:
+
+```bash
+curl -X POST http://localhost:5000/api/chat/ask \
+  -H "Content-Type: application/json" \
+  -d '{"question": "Who is the Tech Lead and what is their salary?", "conversationId": "demo"}'
 ```
 
 ---
