@@ -4,21 +4,21 @@ namespace Infrastructure.VectorStore;
 
 public sealed class DocumentChunkRecord
 {
-    [VectorStoreRecordKey]
+    [VectorStoreKey]
     public Guid Id { get; set; }
 
-    [VectorStoreRecordData(IsFilterable = true)]
+    [VectorStoreData(IsIndexed = true)]
     public string DocumentId { get; set; } = string.Empty;
 
-    [VectorStoreRecordData(IsFilterable = true)]
+    [VectorStoreData(IsIndexed = true)]
     public string DocumentName { get; set; } = string.Empty;
 
-    [VectorStoreRecordData]
+    [VectorStoreData]
     public string Content { get; set; } = string.Empty;
 
-    [VectorStoreRecordData]
+    [VectorStoreData]
     public int ChunkIndex { get; set; }
 
-    [VectorStoreRecordVector(3072, DistanceFunction.CosineSimilarity)]
+    [VectorStoreVector(2048, DistanceFunction = DistanceFunction.CosineSimilarity)]
     public ReadOnlyMemory<float>? Embedding { get; set; }
 }

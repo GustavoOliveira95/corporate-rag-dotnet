@@ -25,8 +25,8 @@ This prevents hallucination: the model can only answer from what's actually in y
                     ┌────────▼────────────▼────────┐
                     │         Infrastructure         │
                     │  ┌──────────┐  ┌───────────┐  │
-                    │  │ Qdrant   │  │  Ollama   │  │
-                    │  │ (Vectors)│  │  (phi3)   │  │
+                    │  │ Qdrant   │  │  Ollama        │  │
+                    │  │ (Vectors)│  │  (llama3.2:1b) │  │
                     │  └──────────┘  └───────────┘  │
                     └───────────────────────────────┘
 ```
@@ -35,14 +35,14 @@ This prevents hallucination: the model can only answer from what's actually in y
 
 ```
 PDF Upload ──▶ PdfPig (extract text) ──▶ Chunker (500 words / 50 overlap)
-    ──▶ Ollama phi3 (embed each chunk) ──▶ Qdrant (store vectors)
+    ──▶ Ollama llama3.2:1b (embed each chunk) ──▶ Qdrant (store vectors)
 ```
 
 ### Question-Answering Pipeline
 
 ```
-Question ──▶ Ollama phi3 (embed) ──▶ Qdrant (top-5 semantic search)
-    ──▶ Context Builder ──▶ Ollama phi3 (LLM with ChatHistory) ──▶ Answer
+Question ──▶ Ollama llama3.2:1b (embed) ──▶ Qdrant (top-5 semantic search)
+    ──▶ Context Builder ──▶ Ollama llama3.2:1b (LLM with ChatHistory) ──▶ Answer
 ```
 
 ---
@@ -53,7 +53,7 @@ Question ──▶ Ollama phi3 (embed) ──▶ Qdrant (top-5 semantic search)
 |---|---|
 | API | .NET 10 Web API |
 | AI Orchestration | Semantic Kernel |
-| LLM & Embeddings | Ollama + phi3 (local) |
+| LLM & Embeddings | Ollama + llama3.2:1b (local) |
 | Vector Store | Qdrant |
 | PDF Extraction | PdfPig |
 | Use Cases | MediatR |
@@ -66,9 +66,9 @@ Question ──▶ Ollama phi3 (embed) ──▶ Qdrant (top-5 semantic search)
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (v24+)
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10) — for local development only
-- ~3 GB free disk space for the phi3 model
+- ~1.5 GB free disk space for the llama3.2:1b model
 
-> **GPU note**: phi3 runs on CPU by default (~10–30 s/response). For GPU acceleration, edit `docker-compose.yml` and add the appropriate NVIDIA/AMD runtime to the `ollama` service.
+> **GPU note**: llama3.2:1b runs on CPU by default (~30–90 s/response). For GPU acceleration, edit `docker-compose.yml` and add the appropriate NVIDIA/AMD runtime to the `ollama` service.
 
 ---
 
@@ -85,14 +85,14 @@ cp .env.example .env
 # 3. Start all services
 docker-compose up -d
 
-# 4. Wait for phi3 to download (~2 GB, first run only)
+# 4. Wait for llama3.2:1b to download (~1.3 GB, first run only)
 docker logs -f corporate-rag-ollama-init
 
 # 5. Open Swagger UI
 start http://localhost:5000/swagger
 ```
 
-The `ollama-init` container automatically pulls the phi3 model and exits. The API waits for Qdrant and Ollama to be healthy before starting.
+The `ollama-init` container automatically pulls the llama3.2:1b model and exits. The API waits for Qdrant and Ollama to be healthy before starting.
 
 ---
 
@@ -189,7 +189,7 @@ All settings can be overridden via environment variables:
 |---|---|---|
 | `Ollama__Endpoint` | `http://localhost:11434` | Ollama API base URL |
 | `Qdrant__Host` | `localhost` | Qdrant hostname |
-| `Qdrant__Port` | `6333` | Qdrant gRPC port |
+| `Qdrant__Port` | `6334` | Qdrant gRPC port |
 | `DataPath` | `<app>/data` | Directory for the document registry JSON |
 | `APP_PORT` | `5000` | Host port mapped to the API container |
 
@@ -197,8 +197,7 @@ All settings can be overridden via environment variables:
 
 ## Notes
 
-- **Model size**: phi3 (phi3:mini) is ~2.3 GB. Downloaded once and cached in the `ollama_models` Docker volume.
-- **CPU performance**: Expect 10–30 seconds per response on a modern CPU. Inference is faster on machines with more RAM.
-- **Security vulnerability**: `Microsoft.SemanticKernel.Core` 1.28.0 has a known advisory ([GHSA-2ww3-72rp-wpp4](https://github.com/advisories/GHSA-2ww3-72rp-wpp4)). Update the SK version in `Infrastructure.csproj` when a patched release is available.
+- **Model size**: llama3.2:1b is ~1.3 GB. Downloaded once and cached in the `ollama_models` Docker volume.
+- **CPU performance**: Expect 30–90 seconds per response on CPU. Inference is faster on machines with a dedicated GPU.
 - **Conversation history** is stored in-memory and cleared on API restart. For production, replace `InMemoryConversationHistoryService` with a Redis or database-backed implementation.
 - **Document registry** is stored as a JSON file in the `data/` volume. For production, replace `JsonFileDocumentRepository` with a SQL or NoSQL database implementation.

@@ -3,8 +3,7 @@ using Domain.Entities;
 using Microsoft.Extensions.VectorData;
 using Qdrant.Client;
 using Qdrant.Client.Grpc;
-
-#pragma warning disable SKEXP0001  // IVectorStore is experimental
+using VDStore = Microsoft.Extensions.VectorData.VectorStore;
 
 namespace Infrastructure.VectorStore;
 
@@ -12,10 +11,10 @@ public sealed class QdrantVectorStoreRepository : IVectorStoreRepository
 {
     private const string CollectionName = "document_chunks";
 
-    private readonly IVectorStore _vectorStore;
+    private readonly VDStore _vectorStore;
     private readonly QdrantClient _qdrantClient;
 
-    public QdrantVectorStoreRepository(IVectorStore vectorStore, QdrantClient qdrantClient)
+    public QdrantVectorStoreRepository(VDStore vectorStore, QdrantClient qdrantClient)
     {
         _vectorStore = vectorStore;
         _qdrantClient = qdrantClient;
@@ -24,7 +23,7 @@ public sealed class QdrantVectorStoreRepository : IVectorStoreRepository
     public async Task EnsureCollectionExistsAsync(CancellationToken cancellationToken = default)
     {
         var collection = GetCollection();
-        await collection.CreateCollectionIfNotExistsAsync(cancellationToken);
+        await collection.EnsureCollectionExistsAsync(cancellationToken);
     }
 
     public async Task UpsertBatchAsync(IEnumerable<DocumentChunk> chunks, CancellationToken cancellationToken = default)
@@ -54,12 +53,12 @@ public sealed class QdrantVectorStoreRepository : IVectorStoreRepository
     {
         var collection = GetCollection();
         var memory = new ReadOnlyMemory<float>(embedding);
-        var options = new VectorSearchOptions { Top = topK };
+        var options = new VectorSearchOptions<DocumentChunkRecord>();
         var results = new List<ChunkSearchResult>();
 
-        var searchResults = await collection.VectorizedSearchAsync(memory, options, cancellationToken);
+        var searchResults = collection.SearchAsync(memory, topK, options, cancellationToken);
 
-        await foreach (var result in searchResults.Results)
+        await foreach (var result in searchResults)
         {
             results.Add(new ChunkSearchResult(
                 result.Record.DocumentId,
@@ -87,6 +86,6 @@ public sealed class QdrantVectorStoreRepository : IVectorStoreRepository
         await _qdrantClient.DeleteAsync(CollectionName, filter, cancellationToken: cancellationToken);
     }
 
-    private IVectorStoreRecordCollection<Guid, DocumentChunkRecord> GetCollection()
-        => _vectorStore.GetCollection<Guid, DocumentChunkRecord>(CollectionName);
+    private VectorStoreCollection<Guid, DocumentChunkRecord> GetCollection()
+        => (VectorStoreCollection<Guid, DocumentChunkRecord>)_vectorStore.GetCollection<Guid, DocumentChunkRecord>(CollectionName);
 }
